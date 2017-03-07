@@ -253,7 +253,7 @@ class FileInfo(object):
 
         :returns: file etag
         """
-        return self.attributes['{DAV:}getetag']
+        return self.attributes['{DAV:}getetag'].replace('"', '')
 
     def get_content_type(self):
         """Returns the file content type
@@ -397,7 +397,28 @@ class Client(object):
         if isinstance(depth, int) or depth == "infinity":
             headers['Depth'] = str(depth)
 
-        res = self._make_dav_request('PROPFIND', path, headers=headers)
+        data = """<?xml version="1.0" encoding="utf-8"?>
+            <d:propfind xmlns:d="DAV:" xmlns:oc="http://owncloud.org/ns">
+              <d:prop>
+                <d:getlastmodified />
+                <d:getetag />
+                <d:getcontenttype />
+                <d:resourcetype />
+                <oc:fileid />
+                <oc:permissions />
+                <oc:size />
+                <oc:id />
+                <d:getcontentlength />
+                <oc:tags />
+                <oc:favorite />
+                <oc:comments-unread />
+                <oc:owner-display-name />
+                <oc:share-types />
+              </d:prop>
+            </d:propfind>
+        """
+
+        res = self._make_dav_request('PROPFIND', path, headers=headers, data=data)
         # first one is always the root, remove it from listing
         if res:
             return res[1:]
@@ -1772,7 +1793,11 @@ class Client(object):
         attrs = dav_response.find('{DAV:}propstat')
         attrs = attrs.find('{DAV:}prop')
         for attr in attrs:
-            file_attrs[attr.tag] = attr.text
+            tag = attr.tag
+            if tag.startswith('{http://owncloud.org/ns}'):
+                tag = tag.replace('{http://owncloud.org/ns}', '')
+
+            file_attrs[tag] = attr.text
 
         return FileInfo(href, file_type, file_attrs)
 
