@@ -400,20 +400,7 @@ class Client(object):
         data = """<?xml version="1.0" encoding="utf-8"?>
             <d:propfind xmlns:d="DAV:" xmlns:oc="http://owncloud.org/ns">
               <d:prop>
-                <d:getlastmodified />
-                <d:getetag />
-                <d:getcontenttype />
-                <d:resourcetype />
-                <oc:fileid />
-                <oc:permissions />
-                <oc:size />
                 <oc:id />
-                <d:getcontentlength />
-                <oc:tags />
-                <oc:favorite />
-                <oc:comments-unread />
-                <oc:owner-display-name />
-                <oc:share-types />
               </d:prop>
             </d:propfind>
         """
@@ -1793,11 +1780,7 @@ class Client(object):
         attrs = dav_response.find('{DAV:}propstat')
         attrs = attrs.find('{DAV:}prop')
         for attr in attrs:
-            tag = attr.tag
-            if tag.startswith('{http://owncloud.org/ns}'):
-                tag = tag.replace('{http://owncloud.org/ns}', '')
-
-            file_attrs[tag] = attr.text
+            file_attrs[attr.tag] = attr.text
 
         return FileInfo(href, file_type, file_attrs)
 
